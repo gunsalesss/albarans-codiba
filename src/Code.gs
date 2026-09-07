@@ -144,7 +144,7 @@ function createUniqueSheet_(ss, baseName) {
     name = (baseName + ' (' + i + ')').slice(0, 100);
     i++;
   }
-  return ss.insertSheet(name);
+  return ss.insertSheet(name, ss.getNumSheets());
 }
 
 function sanitizeSheetName_(pdfOrigen) {
