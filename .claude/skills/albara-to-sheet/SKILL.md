@@ -89,6 +89,35 @@ Notes sobre camps concrets:
 - `totals`: una entrada per cada tipus d'IVA que aparegui al peu (normalment
   10% i 21%).
 
+## Pas 2b — Detecta i descarta documents duplicats
+
+CODIBA sovint imprimeix **dues còpies físiques amb exactament les mateixes
+dades** del mateix moment (p.ex. còpia del xofer i còpia del client en el
+moment de l'entrega/recollida, abdues signades o amb les mateixes ratlles
+de verificació). Això NO és el mateix cas que la còpia "final" amb
+devolucions ja aplicades (aquesta sí que té dades diferents i s'ha de
+mantenir sempre).
+
+Abans de construir el payload, compara cada parella de documents extrets
+del mateix PDF. Considera'ls **duplicats** només si TOTS aquests punts
+coincideixen:
+- Mateix `total_bultos` i mateix `total_a_pagar`.
+- Mateixes línies: mateixos codis amb les mateixes quantitats (`quant`) i
+  el mateix `import_net` per línia (petites diferències de lectura
+  manuscrita no compten com a diferència real si els valors impresos són
+  idèntics).
+
+Si dos documents són duplicats:
+- Conserva'n **només un** al payload final (`documents`) — tria el que
+  tingui més informació llegible (per exemple, si un té anotacions
+  manuscrites il·legibles i l'altre no, queda't amb el que no en té).
+- A l'`observacions` del document conservat, afegeix una nota breu
+  indicant que hi havia una còpia duplicada i a quines pàgines
+  (p.ex. "Còpia duplicada també present a pàgines 6-7, mateixes dades.").
+- Mai descartis un document que tingui `total_bultos` o `total_a_pagar`
+  diferent (típicament la versió amb devolucions/ajustos ja aplicats):
+  aquesta sempre s'ha de conservar com a document separat.
+
 ## Pas 3 — Enviar les dades al Web App
 
 1. Llegeix `webapp.json` per obtenir `url` (i `sheet_id` si hi és).
