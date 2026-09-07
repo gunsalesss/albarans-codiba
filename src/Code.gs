@@ -4,7 +4,7 @@
  * "Albarans", one row per product line in "Linies".
  *
  * Setup (run once from the Apps Script editor): call setup_() with your
- * Sheet ID and a secret token, see README.md.
+ * Sheet ID, see README.md.
  */
 
 var ALBARANS_HEADERS = [
@@ -19,21 +19,15 @@ var LINIES_HEADERS = [
   'Preu', 'Dte', 'IBEE', 'Punt Verd', 'Import Net', 'IVA%'
 ];
 
-function setup_(sheetId, secret) {
+function setup_(sheetId) {
   var props = PropertiesService.getScriptProperties();
   props.setProperty('SHEET_ID', sheetId);
-  props.setProperty('SHARED_SECRET', secret);
 }
 
 function doPost(e) {
   var props = PropertiesService.getScriptProperties();
   try {
     var body = JSON.parse(e.postData.contents);
-
-    var expectedSecret = props.getProperty('SHARED_SECRET');
-    if (expectedSecret && body.secret !== expectedSecret) {
-      return jsonOutput_({ error: 'Unauthorized' });
-    }
 
     var sheetId = props.getProperty('SHEET_ID');
     if (!sheetId) {

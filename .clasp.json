@@ -1,4 +1,16 @@
 {
-  "scriptId": "POSA_AQUI_EL_SCRIPT_ID_DESPRES_DE_CLASP_CREATE",
-  "rootDir": "src"
+  "scriptId": "1LIyNl1uZyob7u0SXaYtSQurXv_euQzpqbjdxzSd-8o--sYzqdGodI4wQ",
+  "rootDir": "src",
+  "scriptExtensions": [
+    ".js",
+    ".gs"
+  ],
+  "htmlExtensions": [
+    ".html"
+  ],
+  "jsonExtensions": [
+    ".json"
+  ],
+  "filePushOrder": [],
+  "skipSubdirectories": false
 }

@@ -14,12 +14,11 @@ Google Apps Script (`src/Code.gs`) que les escriu al Google Sheet.
 Comprova que existeix `webapp.json` a l'arrel del projecte
 (`albarans-codiba/webapp.json`, gitignored). Si no existeix, atura't i
 indica a l'usuari que segueixi el `README.md` per desplegar el Web App
-d'Apps Script i crear aquest fitxer amb la URL i el secret. No continuïs
-sense això.
+d'Apps Script i crear aquest fitxer amb la URL. No continuïs sense això.
 
 `webapp.json` té aquesta forma:
 ```json
-{ "url": "https://script.google.com/macros/s/AKfycb.../exec", "secret": "..." }
+{ "url": "https://script.google.com/macros/s/AKfycb.../exec" }
 ```
 
 ## Pas 2 — Llegir el PDF
@@ -82,8 +81,8 @@ Notes sobre camps concrets:
 
 ## Pas 3 — Enviar les dades al Web App
 
-1. Llegeix `webapp.json` per obtenir `url` i `secret`.
-2. Construeix el payload: `{"secret": "<secret>", "pdf_origen": "<nom del PDF>", "documents": [...]}`.
+1. Llegeix `webapp.json` per obtenir `url`.
+2. Construeix el payload: `{"pdf_origen": "<nom del PDF>", "documents": [...]}`.
 3. Desa'l a un fitxer temporal (usa el scratchpad de la sessió) i envia'l amb:
    ```bash
    curl -s -X POST -H "Content-Type: application/json" \
@@ -98,8 +97,6 @@ Notes sobre camps concrets:
 
 ## Errors habituals
 
-- Si la resposta és `{"error": "Unauthorized"}`: el `secret` de `webapp.json`
-  no coincideix amb el configurat al Script (`setup_()` a `src/Code.gs`).
 - Si la resposta és `{"error": "SHEET_ID no configurat..."}`: cal executar
   `setup_()` un cop des de l'editor d'Apps Script (veure README).
 - Si `curl` retorna una pàgina HTML de login de Google en lloc de JSON: el

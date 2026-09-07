@@ -28,39 +28,52 @@ Google normal — cap consola de Cloud, cap targeta.
 
 ```bash
 cd albarans-codiba
-clasp create --type webapp --title "Albarans CODIBA" --rootDir src
-clasp push
+clasp create --type standalone --title "Albarans CODIBA" --rootDir src
 ```
 
-Això substituirà `.clasp.json` pel `scriptId` real del teu projecte.
+`clasp create` sobreescriu `src/appsscript.json` amb un manifest per
+defecte — torna a deixar-hi el fus horari i el bloc `webapp` (mira'l al
+repo si cal) i després puja:
+
+```bash
+clasp push --force
+```
 
 ### 3. Desplega'l com a Web App
 
 ```bash
-clasp open
+clasp deploy --description "Web app v1"
 ```
 
-A l'editor d'Apps Script que s'obre al navegador:
-1. **Deploy → New deployment**.
-2. Tipus: **Web app**.
-3. "Execute as": **Me** (tu). "Who has access": **Anyone**.
-4. Deploy. Copia la URL que et dona (acaba en `/exec`).
+Això et dona un `deploymentId`; la URL del Web App és:
+`https://script.google.com/macros/s/<deploymentId>/exec`.
 
-### 4. Configura el Sheet ID i el secret
+### 4. Autoritza el script i configura el Sheet ID (un pas manual imprescindible)
 
-Encara a l'editor d'Apps Script, obre `Code.gs`, selecciona la funció
-`setup_` al desplegable de funcions de dalt, i executa-la manualment un
-cop des de l'editor **amb els paràmetres omplerts** (edita temporalment la
-crida o fes servir l'editor d'execució amb arguments):
+La primera vegada, Google necessita que **tu mateix** autoritzis el script
+des de l'editor abans que el Web App funcioni (encara que el desplegament
+ja estigui marcat com a públic) — si no ho fas, l'URL respon amb una
+pàgina d'"Necessites accés".
 
-```js
-setup_('EL_ID_DEL_TEU_GOOGLE_SHEET', 'un-secret-llarg-i-aleatori-que-inventis-tu');
-```
-
-L'ID del Sheet és la part de la URL entre `/d/` i `/edit`:
-`https://docs.google.com/spreadsheets/d/AQUEST_ID_AQUI/edit`.
-Pots fer servir un Sheet ja existent o crear-ne un de nou en blanc — les
-pestanyes "Albarans" i "Linies" es creen soles la primera vegada.
+1. Obre l'editor: `clasp open` (o la URL que et va donar `clasp create`).
+2. A `Code.gs`, afegeix temporalment al final:
+   ```js
+   function runSetup() {
+     setup_('EL_ID_DEL_TEU_GOOGLE_SHEET');
+   }
+   ```
+   L'ID del Sheet és la part de la URL entre `/d/` i `/edit`:
+   `https://docs.google.com/spreadsheets/d/AQUEST_ID_AQUI/edit`.
+   Pots fer servir un Sheet ja existent o crear-ne un de nou en blanc — les
+   pestanyes "Albarans" i "Linies" es creen soles la primera vegada.
+3. Al desplegable de funcions de dalt de tot de l'editor, selecciona
+   `runSetup` i clica ▶ **Run**.
+4. Google et demanarà autoritzar-lo: tria el teu compte → si surt "Google
+   no ha verificat aquesta app", clica **Avançat** → **Ves a Albarans
+   CODIBA (no segur)** → **Permetre**. És normal per a scripts personals
+   no publicats; és el teu propi script.
+5. Un cop s'executi sense error, ja pots esborrar `runSetup` de l'editor
+   si vols (no cal tornar-la a pujar amb clasp).
 
 ### 5. Crea `webapp.json` local
 
@@ -68,8 +81,7 @@ A l'arrel del projecte (aquest fitxer **no** es puja a git):
 
 ```json
 {
-  "url": "https://script.google.com/macros/s/AKfycb.../exec",
-  "secret": "el-mateix-secret-que-has-posat-a-setup_"
+  "url": "https://script.google.com/macros/s/AKfycb.../exec"
 }
 ```
 
@@ -102,6 +114,8 @@ escrigui.
   vegada que facis servir un albarà nou o diferent dels habituals.
 - Si un PDF té pàgines amb anotacions manuscrites, digues-ho a Claude
   perquè no les confongui amb el text imprès.
-- El "secret" del pas 4/5 evita que algú que trobi la URL del Web App
-  pugui escriure dades al teu Sheet sense permís; no cal que sigui res
-  memorable, només llarg i aleatori.
+- L'endpoint no porta cap secret: qualsevol que tingui la URL exacta del
+  Web App podria escriure-hi dades. La URL és llarga i aleatòria (difícil
+  d'endevinar), però no la comparteixis públicament. Si algun dia vols
+  afegir-hi una capa extra de protecció, es pot tornar a introduir un
+  token comprovat a `doPost`.
