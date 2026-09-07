@@ -39,6 +39,10 @@ function doPost(e) {
     var rows = [];
     var liniesEscrites = 0;
 
+    if (documents.length) {
+      appendSharedHeaderRows_(rows, documents[0]);
+    }
+
     documents.forEach(function (doc, idx) {
       if (idx > 0) rows.push(['']);
       appendDocumentRows_(rows, doc);
@@ -60,7 +64,7 @@ function doPost(e) {
   }
 }
 
-function appendDocumentRows_(rows, doc) {
+function appendSharedHeaderRows_(rows, doc) {
   var client = doc.client || {};
 
   var camps = [
@@ -75,7 +79,15 @@ function appendDocumentRows_(rows, doc) {
     ['NIF', client.nif || ''],
     ['Adreça', client.adreca || ''],
     ['Població', client.poblacio || ''],
-    ['Telèfon', client.telefon || ''],
+    ['Telèfon', client.telefon || '']
+  ];
+
+  camps.forEach(function (c) { rows.push(c); });
+  rows.push(['']);
+}
+
+function appendDocumentRows_(rows, doc) {
+  var camps = [
     ['Pàgines', doc.pagines || ''],
     ['Signat', doc.signat ? 'Sí' : 'No'],
     ['Observacions', doc.observacions || ''],
@@ -90,8 +102,8 @@ function appendDocumentRows_(rows, doc) {
   camps.push(['Total a Pagar', doc.total_a_pagar != null ? doc.total_a_pagar : '']);
 
   camps.forEach(function (c) { rows.push(c); });
-
   rows.push(['']);
+
   rows.push(LINIA_HEADERS);
 
   (doc.linies || []).forEach(function (li) {
