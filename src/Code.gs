@@ -79,10 +79,15 @@ function appendDocumentRows_(rows, doc) {
     ['Pàgines', doc.pagines || ''],
     ['Signat', doc.signat ? 'Sí' : 'No'],
     ['Observacions', doc.observacions || ''],
-    ['Total Bultos', doc.total_bultos != null ? doc.total_bultos : ''],
-    ['Totals IVA', JSON.stringify(doc.totals || [])],
-    ['Total a Pagar', doc.total_a_pagar != null ? doc.total_a_pagar : '']
+    ['Total Bultos', doc.total_bultos != null ? doc.total_bultos : '']
   ];
+
+  (doc.totals || []).forEach(function (t) {
+    camps.push(['Base Imposable (IVA ' + t.iva + '%)', t.base_imposable != null ? t.base_imposable : '']);
+    camps.push(['Quota IVA (' + t.iva + '%)', t.quota_iva != null ? t.quota_iva : '']);
+  });
+
+  camps.push(['Total a Pagar', doc.total_a_pagar != null ? doc.total_a_pagar : '']);
 
   camps.forEach(function (c) { rows.push(c); });
 
