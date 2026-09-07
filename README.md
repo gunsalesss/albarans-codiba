@@ -48,7 +48,7 @@ clasp deploy --description "Web app v1"
 Això et dona un `deploymentId`; la URL del Web App és:
 `https://script.google.com/macros/s/<deploymentId>/exec`.
 
-### 4. Autoritza el script i configura el Sheet ID (un pas manual imprescindible)
+### 4. Autoritza el script (un pas manual imprescindible, un sol cop)
 
 La primera vegada, Google necessita que **tu mateix** autoritzis el script
 des de l'editor abans que el Web App funcioni (encara que el desplegament
@@ -56,34 +56,32 @@ ja estigui marcat com a públic) — si no ho fas, l'URL respon amb una
 pàgina d'"Necessites accés".
 
 1. Obre l'editor: `clasp open` (o la URL que et va donar `clasp create`).
-2. A `Code.gs`, afegeix temporalment al final:
-   ```js
-   function runSetup() {
-     setup_('EL_ID_DEL_TEU_GOOGLE_SHEET');
-   }
-   ```
-   L'ID del Sheet és la part de la URL entre `/d/` i `/edit`:
-   `https://docs.google.com/spreadsheets/d/AQUEST_ID_AQUI/edit`.
-   Pots fer servir un Sheet ja existent o crear-ne un de nou en blanc — les
-   pestanyes "Albarans" i "Linies" es creen soles la primera vegada.
-3. Al desplegable de funcions de dalt de tot de l'editor, selecciona
-   `runSetup` i clica ▶ **Run**.
-4. Google et demanarà autoritzar-lo: tria el teu compte → si surt "Google
+2. Al desplegable de funcions de dalt de tot de l'editor, selecciona
+   `doPost` (o qualsevol funció) i clica ▶ **Run**. Fallarà (li falten els
+   paràmetres de la petició HTTP), però això no importa — l'objectiu és
+   només disparar la pantalla d'autorització.
+3. Google et demanarà autoritzar-lo: tria el teu compte → si surt "Google
    no ha verificat aquesta app", clica **Avançat** → **Ves a Albarans
    CODIBA (no segur)** → **Permetre**. És normal per a scripts personals
    no publicats; és el teu propi script.
-5. Un cop s'executi sense error, ja pots esborrar `runSetup` de l'editor
-   si vols (no cal tornar-la a pujar amb clasp).
 
 ### 5. Crea `webapp.json` local
 
-A l'arrel del projecte (aquest fitxer **no** es puja a git):
+A l'arrel del projecte (aquest fitxer **no** es puja a git). L'ID del
+Sheet és la part de la URL entre `/d/` i `/edit`
+(`https://docs.google.com/spreadsheets/d/AQUEST_ID_AQUI/edit`); pots fer
+servir un Sheet ja existent o crear-ne un de nou en blanc — les pestanyes
+"Albarans" i "Linies" es creen soles la primera vegada:
 
 ```json
 {
-  "url": "https://script.google.com/macros/s/AKfycb.../exec"
+  "url": "https://script.google.com/macros/s/AKfycb.../exec",
+  "sheet_id": "EL_ID_DEL_TEU_GOOGLE_SHEET"
 }
 ```
+
+El Web App desa aquest `sheet_id` la primera vegada que rep una petició
+amb aquest camp, així que a partir de llavors ja no caldria ni enviar-lo.
 
 ## Ús
 

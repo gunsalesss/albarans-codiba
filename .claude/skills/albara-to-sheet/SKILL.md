@@ -16,9 +16,14 @@ Comprova que existeix `webapp.json` a l'arrel del projecte
 indica a l'usuari que segueixi el `README.md` per desplegar el Web App
 d'Apps Script i crear aquest fitxer amb la URL. No continuïs sense això.
 
-`webapp.json` té aquesta forma:
+`webapp.json` té aquesta forma (`sheet_id` és opcional — si hi és, s'envia
+a cada petició; el Web App el desa el primer cop i, a partir d'aleshores,
+ja no caldria ni enviar-lo):
 ```json
-{ "url": "https://script.google.com/macros/s/AKfycb.../exec" }
+{
+  "url": "https://script.google.com/macros/s/AKfycb.../exec",
+  "sheet_id": "EL_ID_DEL_GOOGLE_SHEET"
+}
 ```
 
 ## Pas 2 — Llegir el PDF
@@ -81,8 +86,8 @@ Notes sobre camps concrets:
 
 ## Pas 3 — Enviar les dades al Web App
 
-1. Llegeix `webapp.json` per obtenir `url`.
-2. Construeix el payload: `{"pdf_origen": "<nom del PDF>", "documents": [...]}`.
+1. Llegeix `webapp.json` per obtenir `url` (i `sheet_id` si hi és).
+2. Construeix el payload: `{"sheet_id": "<sheet_id si hi és>", "pdf_origen": "<nom del PDF>", "documents": [...]}`.
 3. Desa'l a un fitxer temporal (usa el scratchpad de la sessió) i envia'l amb:
    ```bash
    curl -s -X POST -H "Content-Type: application/json" \

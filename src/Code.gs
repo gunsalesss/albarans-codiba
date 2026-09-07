@@ -29,9 +29,12 @@ function doPost(e) {
   try {
     var body = JSON.parse(e.postData.contents);
 
-    var sheetId = props.getProperty('SHEET_ID');
+    var sheetId = body.sheet_id || props.getProperty('SHEET_ID');
     if (!sheetId) {
-      return jsonOutput_({ error: 'SHEET_ID no configurat. Executa setup_() des de l\'editor.' });
+      return jsonOutput_({ error: 'Falta \'sheet_id\' al payload (o executa setup_() des de l\'editor).' });
+    }
+    if (body.sheet_id && body.sheet_id !== props.getProperty('SHEET_ID')) {
+      props.setProperty('SHEET_ID', body.sheet_id);
     }
 
     var ss = SpreadsheetApp.openById(sheetId);
