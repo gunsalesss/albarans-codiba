@@ -6,49 +6,72 @@ albarà a la pestanya **Albarans**, i una fila per línia de producte a la
 pestanya **Linies**.
 
 Pensada per fer-se servir un a un dins de Claude Code amb la skill
-`albara-to-sheet`: li dones la ruta d'un PDF i ell llegeix, extreu les dades
-i les escriu al Sheet.
+`albara-to-sheet`: li dones la ruta d'un PDF i ell el llegeix, n'extreu les
+dades i les envia a un petit Web App de **Google Apps Script** que les
+escriu al Sheet. **100% gratuït** — Apps Script va lligat al teu compte de
+Google normal, sense passar per Google Cloud Console ni activar cap
+facturació (igual que el projecte `generador-fitxes-imbecils`).
 
 ## Configuració (un sol cop)
 
-### 1. Crea un compte de servei de Google
+### 1. Instal·la `clasp` si no el tens
 
-1. Vés a [console.cloud.google.com](https://console.cloud.google.com),
-   crea (o reutilitza) un projecte.
-2. Activa l'API **Google Sheets API** per aquest projecte
-   (APIs & Services → Enable APIs → cerca "Google Sheets API" → Enable).
-3. Ves a **IAM & Admin → Service Accounts → Create Service Account**.
-   Posa-li un nom (p.ex. `albarans-codiba`) i crea'l (no cal donar-li cap
-   rol de projecte).
-4. Dins del compte de servei creat, pestanya **Keys → Add Key → Create new
-   key → JSON**. Es descarregarà un fitxer `.json`.
-5. Copia aquest fitxer a l'arrel d'aquest projecte com `service_account.json`.
-   (Aquest fitxer conté una credencial sensible — no el pugis mai a git;
-   el `.gitignore` ja l'exclou.)
+```bash
+npm install -g @google/clasp
+clasp login
+```
 
-### 2. Crea el Google Sheet i comparteix-lo
+Això obre el navegador perquè autoritzis `clasp` amb el teu compte de
+Google normal — cap consola de Cloud, cap targeta.
 
-1. Crea un Google Sheets nou (o fes servir un existent) on vulguis que
-   arribin les dades.
-2. Obre `service_account.json` i copia el valor del camp `client_email`
-   (té una pinta com `albarans-codiba@el-teu-projecte.iam.gserviceaccount.com`).
-3. Al Google Sheet, **Comparteix** → enganxa aquest email → dona-li permís
-   d'**Editor**.
-4. Copia l'ID del Sheet (la part de la URL entre `/d/` i `/edit`):
-   `https://docs.google.com/spreadsheets/d/AQUEST_ID_AQUI/edit`
-
-### 3. Configura el projecte
+### 2. Crea el projecte d'Apps Script
 
 ```bash
 cd albarans-codiba
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-cp config.example.json config.json
+clasp create --type webapp --title "Albarans CODIBA" --rootDir src
+clasp push
 ```
 
-Edita `config.json` i posa-hi el `sheet_id` del pas anterior (i el nom del
-fitxer de credencials si li has posat un altre nom).
+Això substituirà `.clasp.json` pel `scriptId` real del teu projecte.
+
+### 3. Desplega'l com a Web App
+
+```bash
+clasp open
+```
+
+A l'editor d'Apps Script que s'obre al navegador:
+1. **Deploy → New deployment**.
+2. Tipus: **Web app**.
+3. "Execute as": **Me** (tu). "Who has access": **Anyone**.
+4. Deploy. Copia la URL que et dona (acaba en `/exec`).
+
+### 4. Configura el Sheet ID i el secret
+
+Encara a l'editor d'Apps Script, obre `Code.gs`, selecciona la funció
+`setup_` al desplegable de funcions de dalt, i executa-la manualment un
+cop des de l'editor **amb els paràmetres omplerts** (edita temporalment la
+crida o fes servir l'editor d'execució amb arguments):
+
+```js
+setup_('EL_ID_DEL_TEU_GOOGLE_SHEET', 'un-secret-llarg-i-aleatori-que-inventis-tu');
+```
+
+L'ID del Sheet és la part de la URL entre `/d/` i `/edit`:
+`https://docs.google.com/spreadsheets/d/AQUEST_ID_AQUI/edit`.
+Pots fer servir un Sheet ja existent o crear-ne un de nou en blanc — les
+pestanyes "Albarans" i "Linies" es creen soles la primera vegada.
+
+### 5. Crea `webapp.json` local
+
+A l'arrel del projecte (aquest fitxer **no** es puja a git):
+
+```json
+{
+  "url": "https://script.google.com/macros/s/AKfycb.../exec",
+  "secret": "el-mateix-secret-que-has-posat-a-setup_"
+}
+```
 
 ## Ús
 
@@ -57,13 +80,8 @@ Dins d'una sessió de Claude Code oberta en aquest directori:
 > Passa'm l'albarà `~/Downloads/26-26659 - DISSABTE NIT BLANCA OLIVERES.pdf` al Sheets
 
 Claude farà servir la skill `albara-to-sheet`: llegirà el PDF, n'extraurà
-capçalera + línies + totals, i cridarà `push_to_sheet.py` per escriure-ho.
-
-També pots cridar l'script manualment si ja tens el JSON preparat:
-
-```bash
-python3 push_to_sheet.py ruta/al/json_extret.json
-```
+capçalera + línies + totals, i enviarà les dades al Web App perquè les
+escrigui.
 
 ## Estructura del Sheet
 
@@ -84,3 +102,6 @@ python3 push_to_sheet.py ruta/al/json_extret.json
   vegada que facis servir un albarà nou o diferent dels habituals.
 - Si un PDF té pàgines amb anotacions manuscrites, digues-ho a Claude
   perquè no les confongui amb el text imprès.
+- El "secret" del pas 4/5 evita que algú que trobi la URL del Web App
+  pugui escriure dades al teu Sheet sense permís; no cal que sigui res
+  memorable, només llarg i aleatori.

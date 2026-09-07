@@ -6,16 +6,21 @@ description: Digitalitza un albarà PDF de CODIBA (comercial distribuïdora de b
 # Albarà CODIBA → Google Sheets
 
 Aquesta skill llegeix un PDF d'albarà de CODIBA (el distribuïdor de begudes),
-n'extreu les dades estructurades i les afegeix a un Google Sheets fent servir
-`push_to_sheet.py`.
+n'extreu les dades estructurades i les envia, via HTTP POST, al Web App de
+Google Apps Script (`src/Code.gs`) que les escriu al Google Sheet.
 
 ## Pas 1 — Comprovar la configuració
 
-Comprova que existeixen `config.json` i el fitxer de credencials del compte
-de servei a l'arrel del projecte (`albarans-codiba/`). Si no existeixen,
-atura't i indica a l'usuari que segueixi el `README.md` per crear el compte
-de servei de Google, compartir el Google Sheet amb el seu email, i omplir
-`config.json` a partir de `config.example.json`. No continuïs sense això.
+Comprova que existeix `webapp.json` a l'arrel del projecte
+(`albarans-codiba/webapp.json`, gitignored). Si no existeix, atura't i
+indica a l'usuari que segueixi el `README.md` per desplegar el Web App
+d'Apps Script i crear aquest fitxer amb la URL i el secret. No continuïs
+sense això.
+
+`webapp.json` té aquesta forma:
+```json
+{ "url": "https://script.google.com/macros/s/AKfycb.../exec", "secret": "..." }
+```
 
 ## Pas 2 — Llegir el PDF
 
@@ -75,24 +80,31 @@ Notes sobre camps concrets:
 - `totals`: una entrada per cada tipus d'IVA que aparegui al peu (normalment
   10% i 21%).
 
-## Pas 3 — Escriure el JSON i cridar l'script
+## Pas 3 — Enviar les dades al Web App
 
-1. Desa el JSON com `{"documents": [...], "pdf_origen": "<nom del PDF>"}` a
-   un fitxer temporal (usa el scratchpad de la sessió).
-2. Executa:
+1. Llegeix `webapp.json` per obtenir `url` i `secret`.
+2. Construeix el payload: `{"secret": "<secret>", "pdf_origen": "<nom del PDF>", "documents": [...]}`.
+3. Desa'l a un fitxer temporal (usa el scratchpad de la sessió) i envia'l amb:
    ```bash
-   python3 push_to_sheet.py /path/al/fitxer_temporal.json
+   curl -s -X POST -H "Content-Type: application/json" \
+     --data @/path/al/payload.json \
+     "<url>"
    ```
-   (dins del directori `albarans-codiba/`, amb el venv activat si n'hi ha).
-3. Mostra a l'usuari el resum que imprimeix l'script (files escrites a
-   "Albarans" i "Linies") i, si hi havia més d'un document dins del mateix
-   PDF, avisa'l explícitament perquè sàpiga que ha de revisar quin és vàlid.
+4. Comprova la resposta JSON (`{"ok": true, "albarans_escrits": N, "linies_escrites": M}`).
+   Si torna `{"error": ...}`, mostra'l a l'usuari sense inventar cap solució.
+5. Mostra a l'usuari el resum, i si hi havia més d'un document dins del
+   mateix PDF, avisa'l explícitament perquè sàpiga que ha de revisar quin
+   és vàlid.
 
 ## Errors habituals
 
-- Si `push_to_sheet.py` falla per credencials: recorda a l'usuari que el
-  Google Sheet ha d'estar compartit (Editor) amb l'email del compte de
-  servei que hi ha dins de `service_account.json` (camp `client_email`).
+- Si la resposta és `{"error": "Unauthorized"}`: el `secret` de `webapp.json`
+  no coincideix amb el configurat al Script (`setup_()` a `src/Code.gs`).
+- Si la resposta és `{"error": "SHEET_ID no configurat..."}`: cal executar
+  `setup_()` un cop des de l'editor d'Apps Script (veure README).
+- Si `curl` retorna una pàgina HTML de login de Google en lloc de JSON: el
+  desplegament del Web App no té l'accés configurat com "Anyone" — revisa
+  el desplegament (Deploy → Manage deployments) al README.
 - Si el PDF ve escanejat/torçat i el text no es llegeix bé amb prou
   confiança, no inventis xifres: indica a l'usuari quins camps no has pogut
   llegir amb seguretat perquè els verifiqui.
