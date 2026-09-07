@@ -89,34 +89,49 @@ Notes sobre camps concrets:
 - `totals`: una entrada per cada tipus d'IVA que aparegui al peu (normalment
   10% i 21%).
 
-## Pas 2b — Detecta i descarta documents duplicats
+## Pas 2b — Detecta i descarta documents duplicats o redundants
 
-CODIBA sovint imprimeix **dues còpies físiques amb exactament les mateixes
-dades** del mateix moment (p.ex. còpia del xofer i còpia del client en el
-moment de l'entrega/recollida, abdues signades o amb les mateixes ratlles
-de verificació). Això NO és el mateix cas que la còpia "final" amb
-devolucions ja aplicades (aquesta sí que té dades diferents i s'ha de
-mantenir sempre).
+Un mateix PDF de CODIBA sol contenir diverses còpies del mateix moment
+d'entrega/recollida, i cal evitar que les seves línies acabin repetides
+a la taula d'ítems. Hi ha DOS casos, i cal comprovar-los tots dos —
+**comparant les línies per `(codi, quant, preu)`**, no només els totals:
 
-Abans de construir el payload, compara cada parella de documents extrets
-del mateix PDF. Considera'ls **duplicats** només si TOTS aquests punts
-coincideixen:
-- Mateix `total_bultos` i mateix `total_a_pagar`.
-- Mateixes línies: mateixos codis amb les mateixes quantitats (`quant`) i
-  el mateix `import_net` per línia (petites diferències de lectura
-  manuscrita no compten com a diferència real si els valors impresos són
-  idèntics).
+**Important — no ho confonguis amb el parell entrega/recollida legítim.**
+Dins d'un mateix document, un mateix `codi` pot aparèixer com a màxim
+**2 vegades**: una línia amb quantitat positiva (l'entrega) i una amb
+quantitat negativa amb el símbol "-" (la recollida/devolució, amb el seu
+propi `import_net` negatiu). Això **no és mai un duplicat** — són dues
+línies reals i s'han de mantenir totes dues. Els casos A i B de sota
+només s'apliquen quan comparant **documents sencers entre si**.
 
-Si dos documents són duplicats:
-- Conserva'n **només un** al payload final (`documents`) — tria el que
-  tingui més informació llegible (per exemple, si un té anotacions
-  manuscrites il·legibles i l'altre no, queda't amb el que no en té).
-- A l'`observacions` del document conservat, afegeix una nota breu
-  indicant que hi havia una còpia duplicada i a quines pàgines
-  (p.ex. "Còpia duplicada també present a pàgines 6-7, mateixes dades.").
-- Mai descartis un document que tingui `total_bultos` o `total_a_pagar`
-  diferent (típicament la versió amb devolucions/ajustos ja aplicats):
-  aquesta sempre s'ha de conservar com a document separat.
+**Cas A — Duplicat exacte.** Dos documents tenen exactament el mateix
+conjunt de línies i el mateix `total_bultos`/`total_a_pagar` (típicament:
+còpia del xofer + còpia del client del mateix recompte, potser amb
+anotacions manuscrites o signatures diferents però les mateixes dades
+impreses). → Conserva'n **només un** (el que tingui més informació
+llegible), i afegeix una nota a l'`observacions` del conservat indicant
+a quines pàgines hi havia la còpia duplicada.
+
+**Cas B — Document redundant (subconjunt d'un altre).** És habitual que
+el document "abans de devolucions" (només línies positives, la comanda
+sencera tal com es va entregar) sigui **un subconjunt exacte** de les
+línies positives d'un altre document que, a més, inclou les línies
+negatives de devolució (el document "final"/ajustat amb devolucions ja
+aplicades). En aquest cas el document petit no aporta cap dada que no
+estigui ja continguda dins del document gran — **descarta'l sencer**
+(no el barregis ni el comptis a part), i queda't només amb el document
+que ja inclou les devolucions. Comprova-ho així: si TOTES les línies
+positives del document A (mateix `codi`+`quant`+`preu`) apareixen també
+al document B, i B té línies addicionals (normalment negatives) que A no
+té, aleshores A és redundant i es descarta.
+
+Un mateix PDF pot tenir els dos casos alhora (p.ex. 3 documents: 1 de
+final amb devolucions + 2 còpies idèntiques d'abans de devolucions) — en
+aquest cas, al final només ha de quedar **un** document al payload:
+el que ja inclou les devolucions.
+
+Només mantén com a document separat una versió que tingui línies o
+totals genuïnament diferents (no explicables per aquests dos casos).
 
 ## Pas 3 — Enviar les dades al Web App
 
