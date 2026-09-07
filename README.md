@@ -1,9 +1,9 @@
 # albarans-codiba
 
 Eina per digitalitzar albarans PDF de CODIBA (el distribuïdor de begudes de
-la Festa Major) i abocar-ne les dades a un Google Sheets: una fila per
-albarà a la pestanya **Albarans**, i una fila per línia de producte a la
-pestanya **Linies**.
+la Festa Major) i abocar-ne les dades a un Google Sheets: **cada PDF crea
+la seva pròpia pestanya** (amb el nom del fitxer), amb un bloc de capçalera
+(Albarà, Data, Client, Totals...) i la taula de línies de producte a sota.
 
 Pensada per fer-se servir un a un dins de Claude Code amb la skill
 `albara-to-sheet`: li dones la ruta d'un PDF i ell el llegeix, n'extreu les
@@ -71,7 +71,7 @@ A l'arrel del projecte (aquest fitxer **no** es puja a git). L'ID del
 Sheet és la part de la URL entre `/d/` i `/edit`
 (`https://docs.google.com/spreadsheets/d/AQUEST_ID_AQUI/edit`); pots fer
 servir un Sheet ja existent o crear-ne un de nou en blanc — les pestanyes
-"Albarans" i "Linies" es creen soles la primera vegada:
+es creen soles, una per cada PDF que processis:
 
 ```json
 {
@@ -95,14 +95,20 @@ escrigui.
 
 ## Estructura del Sheet
 
-- **Albarans**: una fila per document (Data, Albarà, Càrrega, Xofer,
-  F.Pag., Comercial, dades del client, observacions, total de bultos,
-  totals d'IVA i total a pagar). Un mateix PDF pot generar més d'una fila
-  si conté diverses còpies/versions de l'albarà — es marquen totes, no
-  s'intenta triar automàticament quina és la definitiva.
-- **Linies**: una fila per producte de cada albarà (codi, denominació,
-  quantitat, preu, descomptes, import net, IVA), incloses les línies amb
-  quantitat negativa (devolucions).
+Cada PDF processat crea una **pestanya nova** amb el nom del fitxer (sense
+l'extensió `.pdf`); si ja existeix una pestanya amb aquest nom, se'n crea
+una altra amb un sufix `(2)`, `(3)`... (mai se sobreescriu una d'existent).
+
+Dins de cada pestanya, per cada "document" que contingui el PDF (un mateix
+PDF pot tenir més d'una còpia/versió de l'albarà imprès — totes s'hi
+desen, no s'intenta triar automàticament quina és la definitiva):
+- Un bloc de capçalera (Albarà, Data, Càrrega, Xofer, F.Pag., Comercial,
+  dades del client, pàgines, signat, observacions, total de bultos,
+  totals d'IVA i total a pagar), una fila per camp.
+- A sota, la taula de línies de producte (codi, denominació, quantitat,
+  preu, descomptes, import net, IVA), incloses les línies amb quantitat
+  negativa (devolucions).
+- Un espai en blanc abans del següent document, si n'hi ha més d'un.
 
 ## Notes
 

@@ -7,7 +7,10 @@ description: Digitalitza un albarà PDF de CODIBA (comercial distribuïdora de b
 
 Aquesta skill llegeix un PDF d'albarà de CODIBA (el distribuïdor de begudes),
 n'extreu les dades estructurades i les envia, via HTTP POST, al Web App de
-Google Apps Script (`src/Code.gs`) que les escriu al Google Sheet.
+Google Apps Script (`src/Code.gs`), que crea **una pestanya nova** al
+Google Sheet (amb el nom del fitxer PDF, sense l'extensió) i hi escriu, per
+cada document que contingui el PDF, un bloc de capçalera (Albarà, Data,
+Client, Totals...) seguit de la taula de línies de producte.
 
 ## Pas 1 — Comprovar la configuració
 
@@ -87,26 +90,36 @@ Notes sobre camps concrets:
 ## Pas 3 — Enviar les dades al Web App
 
 1. Llegeix `webapp.json` per obtenir `url` (i `sheet_id` si hi és).
-2. Construeix el payload: `{"sheet_id": "<sheet_id si hi és>", "pdf_origen": "<nom del PDF>", "documents": [...]}`.
-3. Desa'l a un fitxer temporal (usa el scratchpad de la sessió) i envia'l amb:
+2. Construeix el payload: `{"sheet_id": "<sheet_id si hi és>", "pdf_origen": "<nom del fitxer PDF>", "documents": [...]}`.
+3. Desa'l a un fitxer temporal (usa el scratchpad de la sessió) i envia'l.
+   **Important**: Apps Script sempre respon amb un redirect 302 a
+   `script.googleusercontent.com`; fer `curl -s -L` en una sola crida a
+   vegades falla de forma intermitent, així que és més fiable capturar la
+   `Location` i fer-hi una segona petició explícita:
    ```bash
-   curl -s -X POST -H "Content-Type: application/json" \
+   curl -s -D /tmp/headers.txt -X POST -H "Content-Type: application/json" \
      --data @/path/al/payload.json \
-     "<url>"
+     "<url>" > /dev/null
+   LOCATION=$(grep -i '^location:' /tmp/headers.txt | sed 's/^[Ll]ocation: //' | tr -d '\r')
+   curl -s "$LOCATION"
    ```
-4. Comprova la resposta JSON (`{"ok": true, "albarans_escrits": N, "linies_escrites": M}`).
+4. Comprova la resposta JSON (`{"ok": true, "pestanya": "<nom>", "documents_escrits": N, "linies_escrites": M}`).
    Si torna `{"error": ...}`, mostra'l a l'usuari sense inventar cap solució.
-5. Mostra a l'usuari el resum, i si hi havia més d'un document dins del
-   mateix PDF, avisa'l explícitament perquè sàpiga que ha de revisar quin
-   és vàlid.
+5. Mostra a l'usuari el resum (nom de la pestanya creada), i si hi havia
+   més d'un document dins del mateix PDF, avisa'l explícitament perquè
+   sàpiga que ha de revisar quin és vàlid dins d'aquella pestanya.
 
 ## Errors habituals
 
-- Si la resposta és `{"error": "SHEET_ID no configurat..."}`: cal executar
-  `setup_()` un cop des de l'editor d'Apps Script (veure README).
-- Si `curl` retorna una pàgina HTML de login de Google en lloc de JSON: el
-  desplegament del Web App no té l'accés configurat com "Anyone" — revisa
-  el desplegament (Deploy → Manage deployments) al README.
+- Si la resposta és `{"error": "Falta 'sheet_id'..."}`: falta `sheet_id`
+  a `webapp.json` o al payload (o cal executar `setup_()` des de l'editor,
+  veure README).
+- Si `curl` retorna una pàgina HTML de login/error de Google en lloc de
+  JSON: torna-ho a provar seguint el mètode de dues peticions del Pas 3
+  (el redirect intermedi és fiable, la crida directa amb `-L` no sempre).
+- Si el nom de pestanya ja existeix al Sheet, el Web App n'hi afegeix un
+  de nou amb un sufix `(2)`, `(3)`... — no sobreescriu mai una pestanya
+  existent.
 - Si el PDF ve escanejat/torçat i el text no es llegeix bé amb prou
   confiança, no inventis xifres: indica a l'usuari quins camps no has pogut
   llegir amb seguretat perquè els verifiqui.
