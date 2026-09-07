@@ -1,16 +1,22 @@
 /**
  * Web app endpoint that receives parsed CODIBA albarà data (JSON) and
  * writes it into its own tab of the configured Google Sheet: one tab per
- * PDF (named after the source filename), containing a header block +
- * line-item table for each "document" (version/copy) found in that PDF.
+ * PDF (named after the source filename), with a shared header block, one
+ * single uninterrupted line-item list (tagged with which document/version
+ * each line came from), and a compact per-document summary table at the
+ * end (totals, signat, observacions) — nothing splits the item list.
  *
  * Setup (run once from the Apps Script editor): call setup_() with your
  * Sheet ID, see README.md.
  */
 
 var LINIA_HEADERS = [
-  'Codi', 'Unitat', 'Denominació', 'Quantitat', 'Preu', 'Dte', 'IBEE',
-  'Punt Verd', 'Import Net', 'IVA%'
+  'Pàgines', 'Codi', 'Unitat', 'Denominació', 'Quantitat', 'Preu', 'Dte',
+  'IBEE', 'Punt Verd', 'Import Net', 'IVA%'
+];
+
+var RESUM_HEADERS = [
+  'Pàgines', 'Signat', 'Total Bultos', 'Totals IVA', 'Total a Pagar', 'Observacions'
 ];
 
 function setup_(sheetId) {
@@ -43,10 +49,37 @@ function doPost(e) {
       appendSharedHeaderRows_(rows, documents[0]);
     }
 
-    documents.forEach(function (doc, idx) {
-      if (idx > 0) rows.push(['']);
-      appendDocumentRows_(rows, doc);
-      liniesEscrites += (doc.linies || []).length;
+    rows.push(LINIA_HEADERS);
+    documents.forEach(function (doc) {
+      (doc.linies || []).forEach(function (li) {
+        rows.push([
+          doc.pagines || '',
+          li.codi || '',
+          li.unit != null ? li.unit : '',
+          li.denominacio || '',
+          li.quant != null ? li.quant : '',
+          li.preu != null ? li.preu : '',
+          li.dte != null ? li.dte : '',
+          li.ibee != null ? li.ibee : '',
+          li.punt_verd != null ? li.punt_verd : '',
+          li.import_net != null ? li.import_net : '',
+          li.iva != null ? li.iva : ''
+        ]);
+        liniesEscrites++;
+      });
+    });
+
+    rows.push(['']);
+    rows.push(RESUM_HEADERS);
+    documents.forEach(function (doc) {
+      rows.push([
+        doc.pagines || '',
+        doc.signat ? 'Sí' : 'No',
+        doc.total_bultos != null ? doc.total_bultos : '',
+        formatTotalsIva_(doc.totals),
+        doc.total_a_pagar != null ? doc.total_a_pagar : '',
+        doc.observacions || ''
+      ]);
     });
 
     var padded = padRowsTo_(rows, 2);
@@ -86,40 +119,12 @@ function appendSharedHeaderRows_(rows, doc) {
   rows.push(['']);
 }
 
-function appendDocumentRows_(rows, doc) {
-  var camps = [
-    ['Pàgines', doc.pagines || ''],
-    ['Signat', doc.signat ? 'Sí' : 'No'],
-    ['Observacions', doc.observacions || ''],
-    ['Total Bultos', doc.total_bultos != null ? doc.total_bultos : '']
-  ];
-
-  (doc.totals || []).forEach(function (t) {
-    camps.push(['Base Imposable (IVA ' + t.iva + '%)', t.base_imposable != null ? t.base_imposable : '']);
-    camps.push(['Quota IVA (' + t.iva + '%)', t.quota_iva != null ? t.quota_iva : '']);
-  });
-
-  camps.push(['Total a Pagar', doc.total_a_pagar != null ? doc.total_a_pagar : '']);
-
-  camps.forEach(function (c) { rows.push(c); });
-  rows.push(['']);
-
-  rows.push(LINIA_HEADERS);
-
-  (doc.linies || []).forEach(function (li) {
-    rows.push([
-      li.codi || '',
-      li.unit != null ? li.unit : '',
-      li.denominacio || '',
-      li.quant != null ? li.quant : '',
-      li.preu != null ? li.preu : '',
-      li.dte != null ? li.dte : '',
-      li.ibee != null ? li.ibee : '',
-      li.punt_verd != null ? li.punt_verd : '',
-      li.import_net != null ? li.import_net : '',
-      li.iva != null ? li.iva : ''
-    ]);
-  });
+function formatTotalsIva_(totals) {
+  return (totals || []).map(function (t) {
+    var base = t.base_imposable != null ? t.base_imposable : '?';
+    var quota = t.quota_iva != null ? t.quota_iva : '?';
+    return t.iva + '%: base ' + base + ' / quota ' + quota;
+  }).join('; ');
 }
 
 function padRowsTo_(rows, minCols) {
