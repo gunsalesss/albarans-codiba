@@ -8,9 +8,11 @@ description: Digitalitza un albarà PDF de CODIBA (comercial distribuïdora de b
 Aquesta skill llegeix un PDF d'albarà de CODIBA (el distribuïdor de begudes),
 n'extreu les dades estructurades i les envia, via HTTP POST, al Web App de
 Google Apps Script (`src/Code.gs`), que crea **una pestanya nova** al
-Google Sheet (amb el nom del fitxer PDF, sense l'extensió) i hi escriu, per
-cada document que contingui el PDF, un bloc de capçalera (Albarà, Data,
-Client, Totals...) seguit de la taula de línies de producte.
+Google Sheet (amb el nom del fitxer PDF, sense l'extensió) amb: una
+capçalera compartida (Albarà, Data, Client...) un sol cop, **una única
+taula d'ítems sense interrupcions** (totes les línies de tots els
+documents del PDF, etiquetades amb la seva columna "Pàgines"), i al final
+(mai enmig) una taula-resum amb els totals de cada document.
 
 ## Pas 1 — Comprovar la configuració
 

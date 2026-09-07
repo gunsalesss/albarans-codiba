@@ -99,16 +99,20 @@ Cada PDF processat crea una **pestanya nova** amb el nom del fitxer (sense
 l'extensió `.pdf`); si ja existeix una pestanya amb aquest nom, se'n crea
 una altra amb un sufix `(2)`, `(3)`... (mai se sobreescriu una d'existent).
 
-Dins de cada pestanya, per cada "document" que contingui el PDF (un mateix
-PDF pot tenir més d'una còpia/versió de l'albarà imprès — totes s'hi
-desen, no s'intenta triar automàticament quina és la definitiva):
-- Un bloc de capçalera (Albarà, Data, Càrrega, Xofer, F.Pag., Comercial,
-  dades del client, pàgines, signat, observacions, total de bultos,
-  totals d'IVA i total a pagar), una fila per camp.
-- A sota, la taula de línies de producte (codi, denominació, quantitat,
-  preu, descomptes, import net, IVA), incloses les línies amb quantitat
-  negativa (devolucions).
-- Un espai en blanc abans del següent document, si n'hi ha més d'un.
+Dins de cada pestanya (un mateix PDF pot tenir més d'una còpia/versió de
+l'albarà imprès — totes s'hi desen, no s'intenta triar automàticament
+quina és la definitiva):
+1. Un bloc de capçalera compartit (Albarà, Data, Càrrega, Xofer, F.Pag.,
+   Comercial, dades del client), una fila per camp — surt un sol cop,
+   encara que el PDF contingui diverses versions.
+2. **Una única taula d'ítems, sense interrupcions**: totes les línies de
+   producte de tots els documents del PDF, seguides (codi, denominació,
+   quantitat, preu, descomptes, import net, IVA — incloses les línies amb
+   quantitat negativa/devolucions), cadascuna etiquetada amb la columna
+   "Pàgines" que indica de quin document ve.
+3. Al final (mai enmig de la llista), una taula-resum amb una fila per
+   document: pàgines, signat, total de bultos, totals d'IVA (format
+   llegible "10%: base X / quota Y"), total a pagar i observacions.
 
 ## Notes
 
