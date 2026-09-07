@@ -1,0 +1,8 @@
+config.json
+service_account.json
+*.json
+!config.example.json
+!.claude/skills/**/*.json
+venv/
+__pycache__/
+*.pyc
